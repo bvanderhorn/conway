@@ -7,7 +7,9 @@ class State {
     constructor(
         public values: Set<string>,
         public gridSize: [number, number],
-        public wrap: boolean = false
+        public sleep : number = 100,
+        public wrap: boolean = false,
+        public cellStrings: [string, string] = [h.grayBlock, h.whiteBlock]
     ) {}
 
     public run = async (): Promise<void> => {
@@ -16,7 +18,7 @@ class State {
         while (true) {
             this.iterate();
             h.printu(this.draw() + "\n");
-            await h.sleep(10);
+            await h.sleep(this.sleep);
         }
     }
 
@@ -30,6 +32,14 @@ class State {
             }
         });
         this.values = next;
+    }
+
+    public draw = () : string =>{
+        var stateMap = new Map<string, number>();
+        this.values.forEach(x => stateMap.set(x, 1));
+        var grid = h.coorMapToMap(stateMap, this.translate, this.cellStrings[0], [[0, this.gridSize[0]], [0, this.gridSize[1]]]);
+        var str = grid.stringc(x => false, 'c') + "\n";
+        return str;
     }
 
     private getNeighbours = (cell: string) : string[] => {
@@ -73,14 +83,7 @@ class State {
         return result;
     }
     
-    private translate = (value:number) : string => value === 0 ? h.whiteBlock : ".";
-        
-    private draw = () : string[][] =>{
-        var stateMap = new Map<string, number>();
-        this.values.forEach(x => stateMap.set(x, 1));
-        return h.coorMapToMap(stateMap, this.translate, ".", [[0, this.gridSize[0]], [0, this.gridSize[1]]]);
-    }
-    
+    public translate = (value:number) : string => value === 1 ? this.cellStrings[1] : this.cellStrings[0];    
 }
 
 var toSet = (values: [number, number][]) : Values => new Set<string>(values.map(x => x.toString()));
@@ -98,5 +101,9 @@ var glider: [number, number][] = [
 var gridSize: [number, number] = [25, 25];
 var values: Values = toSet(glider);
 var wrap = false;
-var state = new State(values, gridSize, false);
+var state = new State(values, gridSize, 50, true, [".", h.colorStr(h.whiteBlock, 'c')]);
+// h.print(state.values);
+// var init = state.draw();
+// h.print(init);
+
 state.run();
