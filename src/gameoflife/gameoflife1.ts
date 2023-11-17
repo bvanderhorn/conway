@@ -99,7 +99,7 @@ class State {
     public translate = (value:number) : string => value === 1 ? this.cellStrings[1] : this.cellStrings[0];    
 }
 
-var loadValues = (fileName:string) : Values => toSet(JSON.parse(h.simpleRead('gameoflife', fileName)));
+var loadPattern = (fileName:string) : Values => toSet(JSON.parse(h.simpleRead('gameoflife', fileName)));
 var toSet = (values: [number, number][]) : Values => new Set<string>(values.map(x => x.toString()));
 
 var glider: [number, number][] = [
@@ -117,13 +117,19 @@ var gliderInitSet: InitSet = {
 };
 
 var gospersGliderGunInitSet: InitSet = {
-    values: loadValues('gospersglidergun.json'),
+    values: loadPattern('gospersglidergun.json'),
     gridSize: [100, 60],
     wrap: false
 };
 
+var isNumber = (input: string) : boolean => /^\d+$/.test(input);
+var input:string[] = h.read('gameoflife', 'gospers.txt').filter(x => !x.startsWith("#")).slice(1).join('').replace('!','').split('$');
+
+h.print(input);
+var henk = 1;
+
 
 // run
-var state = new State(gospersGliderGunInitSet, 50, [".", h.colorStr(h.whiteBlock, 'c')]);
+// var state = new State(gospersGliderGunInitSet, 50, [".", h.colorStr(h.whiteBlock, 'c')]);
 
-state.run();
+// state.run();
