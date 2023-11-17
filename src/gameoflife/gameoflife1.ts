@@ -1,78 +1,102 @@
 import { get } from 'http';
 import * as h from '../helpers';
 
-type State = Set<string>;
+type Values = Set<string>;
 
-var getNeighbours = (cell: string, grid: [number, number], wrap:boolean = false) : string[] => {
-    var [x, y] = toValues(cell);
-    var neighbours = [];
-    for (var i = x-1; i <= x+1; i++) {
-        for (var j = y-1; j <= y+1; j++) {
-            if (i === x && j === y) continue;
-            if (wrap) {
-                neighbours.push(`${(i + grid[0]) % grid[0]},${(j + grid[1]) % grid[1]}`);
-            } else {
-                if (i >= 0 && i < grid[0] && j >= 0 && j < grid[1]) {
-                    neighbours.push(`${i},${j}`);
+class State {
+    constructor(
+        public values: Set<string>,
+        public gridSize: [number, number],
+        public wrap: boolean = false
+    ) {}
+
+    public run = async (): Promise<void> => {
+        h.print(this.draw());
+
+        while (true) {
+            this.iterate();
+            h.printu(this.draw() + "\n");
+            await h.sleep(10);
+        }
+    }
+
+    public iterate = () => {
+        var next:Values = new Set<string>();
+        var allCells = this.getAllAssociatedCells();
+        allCells.forEach(cell => {
+            var neighbors = this.nofNeighbours(cell);
+            if (this.survives(this.values.has(cell), neighbors)) {
+                next.add(cell);
+            }
+        });
+        this.values = next;
+    }
+
+    private getNeighbours = (cell: string) : string[] => {
+        var [x, y] = this.toValues(cell);
+        var neighbours = [];
+        for (var i = x-1; i <= x+1; i++) {
+            for (var j = y-1; j <= y+1; j++) {
+                if (i === x && j === y) continue;
+                if (this.wrap) {
+                    neighbours.push(`${(i + this.gridSize[0]) % this.gridSize[0]},${(j + this.gridSize[1]) % this.gridSize[1]}`);
+                } else {
+                    if (i >= 0 && i < this.gridSize[0] && j >= 0 && j < this.gridSize[1]) {
+                        neighbours.push(`${i},${j}`);
+                    }
                 }
             }
         }
+        return neighbours;
     }
-    return neighbours;
+    
+    private nofNeighbours = (cell: string) : number => {
+        var [x, y] = this.toValues(cell);
+        var neighbours = this.getNeighbours(cell);
+        return neighbours.filter(x => this.values.has(x)).length;
+    }
+    
+    private survives = (cell: boolean, neighbors: number) => {
+        if (cell) return neighbors === 2 || neighbors === 3;
+        return neighbors === 3;
+    }
+    
+    private toValues = (cell: string) : [number, number] => cell.split(",").map(x => parseInt(x)) as [number, number];
+    
+    private getAllAssociatedCells = () : Values => {
+        var result = new Set<string>();
+        this.values.forEach(cell => {
+            var neighbours = this.getNeighbours(cell);
+            neighbours.forEach(x => result.add(x));
+            result.add(cell);
+        });
+        return result;
+    }
+    
+    private translate = (value:number) : string => value === 0 ? h.whiteBlock : ".";
+        
+    private draw = () : string[][] =>{
+        var stateMap = new Map<string, number>();
+        this.values.forEach(x => stateMap.set(x, 1));
+        return h.coorMapToMap(stateMap, this.translate, ".", [[0, this.gridSize[0]], [0, this.gridSize[1]]]);
+    }
+    
 }
 
-var nofNeighbours = (cell: string, current: State, gridSize: [number, number]) : number => {
-    var [x, y] = toValues(cell);
-    var neighbours = getNeighbours(cell, gridSize);
-    return neighbours.filter(x => current.has(x)).length;
-}
+var toSet = (values: [number, number][]) : Values => new Set<string>(values.map(x => x.toString()));
 
-var survives = (cell: boolean, neighbors: number) => {
-    if (cell) return neighbors === 2 || neighbors === 3;
-    return neighbors === 3;
-}
-
-var toValues = (cell: string) : [number, number] => cell.split(",").map(x => parseInt(x)) as [number, number];
-
-var getAllAssociatedCells = (current: State, gridSize:[number, number]) : State => {
-    var result = new Set<string>();
-    current.forEach(cell => {
-        var neighbours = getNeighbours(cell, gridSize);
-        neighbours.forEach(x => result.add(x));
-        result.add(cell);
-    });
-    return result;
-}
-
-var iterate = (current: State, gridSize:[number, number]) : State => {
-    var next = new Set<string>();
-    var allCells = getAllAssociatedCells(current, gridSize);
-    allCells.forEach(cell => {
-        var neighbors = nofNeighbours(cell, current, gridSize);
-        if (survives(current.has(cell), neighbors)) {
-            next.add(cell);
-        }
-    });
-}
-
-var translate = (value:number) : string => value === 0 ? h.whiteBlock : ".";
-
-var glider: State = new Set<string>([
-        [2,1],
-        [3,2],
-        [1,3],
-        [2,3],
-        [3,3]
-    ].map(x => x.toString())
-);
-
-var stateToString = (state: State) : string[][] =>{
-    var stateMap = new Map<string, number>();
-    state.forEach(x => stateMap.set(x, 1));
-    return h.coorMapToMap(stateMap, translate, ".", [[0, gridSize[0]], [0, gridSize[1]]]);
-}
+var glider: [number, number][] = [
+    [2,1],
+    [3,2],
+    [1,3],
+    [2,3],
+    [3,3]
+];
     
 
 // run
-var gridSize = [25, 25];
-var values: Set<string> = glider;
+var gridSize: [number, number] = [25, 25];
+var values: Values = toSet(glider);
+var wrap = false;
+var state = new State(values, gridSize, false);
+state.run();
