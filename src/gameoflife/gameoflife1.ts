@@ -124,12 +124,8 @@ var gospersGliderGunInitSet: InitSet = {
 
 var isNumber = (input: string) : boolean => /^\d+$/.test(input);
 var input:string[] = h.read('gameoflife', 'gospers.txt').filter(x => !x.startsWith("#")).slice(1).join('').replace('!','').split('$');
-
-h.print(input);
-var henk = 1;
-
+// h.print(input);
 
 // run
-// var state = new State(gospersGliderGunInitSet, 50, [".", h.colorStr(h.whiteBlock, 'c')]);
-
-// state.run();
+var state = new State(gospersGliderGunInitSet, 50, [".", h.colorStr(h.whiteBlock, 'c')]);
+state.run();
