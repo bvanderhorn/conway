@@ -9,29 +9,29 @@ export function stringify(object: any) : string {
     return JSON.stringify(object, null, 4);
 }
 
-export function write(day:number, filename:string, content:string, options:string='') {
+export function write(folder:string, filename:string, content:string, options:string='') {
     // options
     const example: boolean = options.includes('ex');
 
     const fn = (example ? exampleString : '') + filename;
-    print(' writing to file: ',day,'/',fn)
-    fs.writeFileSync(sourceFolder + day + '/' + fn,content);
+    print(' writing to file: ',folder,'/',fn)
+    fs.writeFileSync(sourceFolder + folder + '/' + fn,content);
 }
 
-export function simpleRead(day:number, filename:string, options:string ='') : string {
+export function simpleRead(folder:string, filename:string, options:string ='') : string {
     // options
     const example: boolean = options.includes('ex');
 
     const fn = (example ? exampleString : '') + filename;
-    print(' reading file: ',day,'/', fn);
-    return fs.readFileSync(sourceFolder + day + '/' + fn, 'utf8');
+    print(' reading file: ',folder,'/', fn);
+    return fs.readFileSync(sourceFolder + folder + '/' + fn, 'utf8');
 }
 
-export function read(day:number,filename:string, options:string='') : any[] {
+export function read(folder:string,filename:string, options:string='') : any[] {
     // read a file, split on double enters, then split on single enters
     // if double enters: returns string[][]
     // if no double enters: returns string[]
-    const input = simpleRead(day,filename,options).split(/\r?\n\r?\n/).map(el => el.split(/\r?\n/));
+    const input = simpleRead(folder,filename,options).split(/\r?\n\r?\n/).map(el => el.split(/\r?\n/));
     return input.length == 1 ?  input[0] : input;
 }
 
