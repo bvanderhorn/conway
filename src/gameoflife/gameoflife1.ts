@@ -99,7 +99,48 @@ class State {
     public translate = (value:number) : string => value === 1 ? this.cellStrings[1] : this.cellStrings[0];    
 }
 
-var loadPattern = (fileName:string) : Values => new h.DoubleSet<number>(JSON.parse(h.simpleRead('gameoflife', fileName)));
+var loadJson = (fileName:string) : Values => new h.DoubleSet<number>(JSON.parse(h.simpleRead('gameoflife', fileName)));
+
+var extractMultiplier = (input:string) : [number, string] => {
+    var multiplier= '';
+    var rest = input.split('');
+    while (isNumber(rest[0])) {
+        multiplier += rest.shift();
+    }
+    return [
+        multiplier.length === 0 ? 1 : parseInt(multiplier), 
+        rest.join('')
+    ];
+}
+
+var isNumber = (input: string) : boolean => /^\d+$/.test(input);
+var loadPatternFromFile = (fileName:string) : Values => loadPattern(h.read('gameoflife', fileName).filter(x => !x.startsWith("#")).slice(1).join(''));
+
+var loadPattern = (input:string) : Values => {
+    var values: Values = new h.DoubleSet<number>();
+    var curLine = 0;
+    var curCol = 0;
+    var rest = input;
+    while (rest.length > 0) {
+        var [m, rest] = extractMultiplier(rest);
+        if (rest[0] == '$') {
+            curLine += m;
+            curCol = 0;
+        } else if (rest[0] === 'b') {
+            curCol += m;
+        } else if (rest[0] === 'o') { 
+            for (var i = 0; i < m; i++) {
+                values.add([curCol, curLine]);
+                curCol++;
+            }
+        } else if (rest[0] === '!') {
+            break;
+        }
+        rest = rest.slice(1);
+    }
+
+    return values;
+}
 
 var glider: [number, number][] = [
     [2,1],
@@ -109,22 +150,22 @@ var glider: [number, number][] = [
     [3,3]
 ];
 
+var gliderPattern = 'bo$2bo$3o!';
+
 var gliderSet: InitSet = {
-    values: new h.DoubleSet<number>(glider),
-    gridSize: [25, 25],
+    // values: new h.DoubleSet<number>(glider),
+    values: loadPattern(gliderPattern),
+    gridSize: [10, 10],
     wrap: true
 };
 
 var gospersGliderGunSet: InitSet = {
-    values: loadPattern('gospersglidergun.json'),
-    gridSize: [100, 60],
+    // values: loadJson('gospersglidergun.json'),
+    values: loadPatternFromFile('gospers.txt'),
+    gridSize: [80, 50],
     wrap: false
 };
 
-var isNumber = (input: string) : boolean => /^\d+$/.test(input);
-var input:string[] = h.read('gameoflife', 'gospers.txt').filter(x => !x.startsWith("#")).slice(1).join('').replace('!','').split('$');
-// h.print(input);
-
 // run
-var state = new State(gliderSet, 50, [".", h.colorStr(h.whiteBlock, 'c')]);
+var state = new State(gospersGliderGunSet, 50, [".", h.colorStr(h.whiteBlock, 'c')]);
 state.run();
