@@ -478,6 +478,38 @@ export function smallestCommonMultiple(nums:number[], verbose = false) : number 
     return combineFactors2(nums, verbose).prod();
 }
 
+export class DoubleSet<T1> {
+    private _setMap = new Map<T1, Set<T1>>();
+
+    public constructor(input:[T1,T1][] = []) { 
+        input.forEach(x => this.add(x));
+    }
+
+    public add = (value:[T1,T1]) : void => {
+        if (!this._setMap.has(value[0])) this._setMap.set(value[0], new Set<T1>());
+        this._setMap.get(value[0])!.add(value[1]);
+    }
+
+    public has = (value: [T1,T1]) : boolean => {
+        var set = this._setMap.get(value[0]);
+        return (set == undefined) 
+            ? false
+            : set.has(value[1]);
+    }
+
+    public delete = (value: [T1,T1]) : void => {
+        var set = this._setMap.get(value[0]);
+        if (set != undefined) {
+            set.delete(value[1]);
+            if (set.size == 0) this._setMap.delete(value[0]);
+        }
+    }
+
+    public forEach = (callbackfn: (value: [T1,T1]) => void) : void => {
+        this._setMap.forEach((set, value1) => set.forEach(value2 => callbackfn([value1, value2])));
+    }
+}
+
 export class MultiMap<K,V> {
     // extension of the Map function to circumvent the 2^24-1 limit on the number of elements
     private readonly _maps : Map<K,V>[] = [];

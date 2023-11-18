@@ -1,7 +1,7 @@
 import { get } from 'http';
 import * as h from '../helpers';
 
-type Values = Set<string>;
+type Values = h.DoubleSet<number>;
 type InitSet = {
     values: Values,
     gridSize: [number, number]
@@ -9,7 +9,7 @@ type InitSet = {
 }
 
 class State {
-    public values: Set<string>;
+    public values: Values;
     public gridSize: [number, number];
     public sleep : number = 100;
     public wrap: boolean = false;
@@ -33,7 +33,7 @@ class State {
     }
 
     public iterate = () => {
-        var next:Values = new Set<string>();
+        var next:Values = new h.DoubleSet<number>();
         var allCells = this.getAllAssociatedCells();
         allCells.forEach(cell => {
             var neighbors = this.nofNeighbours(cell);
@@ -46,26 +46,29 @@ class State {
 
     public draw = () : string =>{
         var stateMap = new Map<string, number>();
-        this.values.forEach(x => stateMap.set(x, 1));
+        this.values.forEach(x => stateMap.set(x.toString(), 1));
         var grid = h.coorMapToMap(stateMap, this.translate, this.cellStrings[0], [[0, this.gridSize[0]], [0, this.gridSize[1]]]);
         var str = grid.stringc(x => false, 'c') + "\n";
         return str;
     }
 
-    private getNeighbours = (cell: string) : string[] => {
-        var [x, y] = this.toValues(cell);
-        var neighbours = [];
+    private getNeighbours = (cell: [number, number]) : [number, number][] => {
+        var [x, y] = cell;
+        var neighbours: [number, number][] = [];
         for (var i = x-1; i <= x+1; i++) {
             for (var j = y-1; j <= y+1; j++) {
 
                 if (i === x && j === y) continue;
 
                 if (this.wrap) {
-                    neighbours.push(`${(i + this.gridSize[0]) % this.gridSize[0]},${(j + this.gridSize[1]) % this.gridSize[1]}`);
+                    neighbours.push([
+                                    (i + this.gridSize[0]) % this.gridSize[0], 
+                                    (j + this.gridSize[1]) % this.gridSize[1]
+                                ]);
 
                 } else {
                     if (i >= 0 && i < this.gridSize[0] && j >= 0 && j < this.gridSize[1]) {
-                        neighbours.push(`${i},${j}`);
+                        neighbours.push([i,j]);
                     }
                 }
             }
@@ -73,8 +76,7 @@ class State {
         return neighbours;
     }
     
-    private nofNeighbours = (cell: string) : number => {
-        var [x, y] = this.toValues(cell);
+    private nofNeighbours = (cell: [number, number]) : number => {
         var neighbours = this.getNeighbours(cell);
         return neighbours.filter(x => this.values.has(x)).length;
     }
@@ -84,10 +86,8 @@ class State {
         return neighbors === 3;
     }
     
-    private toValues = (cell: string) : [number, number] => cell.split(",").map(x => parseInt(x)) as [number, number];
-    
     private getAllAssociatedCells = () : Values => {
-        var result = new Set<string>();
+        var result = new h.DoubleSet<number>();
         this.values.forEach(cell => {
             var neighbours = this.getNeighbours(cell);
             neighbours.forEach(x => result.add(x));
@@ -99,8 +99,7 @@ class State {
     public translate = (value:number) : string => value === 1 ? this.cellStrings[1] : this.cellStrings[0];    
 }
 
-var loadPattern = (fileName:string) : Values => toSet(JSON.parse(h.simpleRead('gameoflife', fileName)));
-var toSet = (values: [number, number][]) : Values => new Set<string>(values.map(x => x.toString()));
+var loadPattern = (fileName:string) : Values => new h.DoubleSet<number>(JSON.parse(h.simpleRead('gameoflife', fileName)));
 
 var glider: [number, number][] = [
     [2,1],
@@ -110,13 +109,13 @@ var glider: [number, number][] = [
     [3,3]
 ];
 
-var gliderInitSet: InitSet = {
-    values: toSet(glider),
+var gliderSet: InitSet = {
+    values: new h.DoubleSet<number>(glider),
     gridSize: [25, 25],
     wrap: true
 };
 
-var gospersGliderGunInitSet: InitSet = {
+var gospersGliderGunSet: InitSet = {
     values: loadPattern('gospersglidergun.json'),
     gridSize: [100, 60],
     wrap: false
@@ -127,5 +126,5 @@ var input:string[] = h.read('gameoflife', 'gospers.txt').filter(x => !x.startsWi
 // h.print(input);
 
 // run
-var state = new State(gospersGliderGunInitSet, 50, [".", h.colorStr(h.whiteBlock, 'c')]);
+var state = new State(gliderSet, 50, [".", h.colorStr(h.whiteBlock, 'c')]);
 state.run();
