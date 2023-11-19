@@ -10,24 +10,24 @@ type InitSet = {
 class State {
     public values: Values;
     public gridSize: [number, number];
-    public sleep : number = 100;
+    public fps : number = 10;
     public wrap: boolean = false;
     public cellStrings: [string, string] = [h.grayBlock, h.whiteBlock];
-    constructor(initSet: InitSet, sleep: number, cellStrings: [string, string]) {
+    constructor(initSet: InitSet, fps: number, cellStrings: [string, string]) {
         this.values = initSet.values;
         this.gridSize = initSet.gridSize;
         this.wrap = initSet.wrap;
-        this.sleep = sleep;
+        this.fps = fps;
         this.cellStrings = cellStrings;
     }
 
     public run = async (): Promise<void> => {
-        h.print(this.draw());
+        var v = h.video();
 
         while (true) {
+            await h.sleep(1000 / this.fps);
+            v.frame(this.draw());
             this.iterate();
-            h.printu(this.draw() + "\n");
-            await h.sleep(this.sleep);
         }
     }
 
@@ -166,5 +166,5 @@ var gospersGliderGunSet: InitSet = {
 };
 
 // run
-var state = new State(gospersGliderGunSet, 50, [".", h.colorStr(h.whiteBlock, 'c')]);
+var state = new State(gospersGliderGunSet, 20, [".", h.colorStr(h.whiteBlock, 'c')]);
 state.run();
